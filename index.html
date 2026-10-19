@@ -1,0 +1,511 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ASTRONOVA - Deep Space Research, Real-Time Telemetry & Planetary Portal</title>
+  <meta name="description" content="Explore real-time planetary distance in kilometers from Earth, NASA research news, 3D fullscreen solar system viewer, and real-time planetary photographs.">
+  <meta name="keywords" content="earth to planets distance kilometers, nasa research news, 3d space fullscreen, real time space images, space weather, planetary catalog">
+  <meta name="author" content="ASTRONOVA Deep Space Network">
+
+  <!-- Open Graph -->
+  <meta property="og:title" content="ASTRONOVA - Real-Time Space Intelligence & Planetary Distances">
+  <meta property="og:description" content="Real-time planetary kilometer distances, NASA research news feed, fullscreen 3D solar system, and planetary images.">
+  <meta property="og:type" content="website">
+
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Orbitron:wght@600;700;800;900&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
+
+  <!-- Three.js (r128) -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+
+  <!-- Favicon -->
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🪐</text></svg>">
+
+  <!-- Stylesheet -->
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+  <!-- ==========================================
+       TOP TELEMETRY STATUS HUD
+       ========================================== -->
+  <aside class="top-telemetry-bar" aria-label="Deep Space Network Telemetry">
+    <div class="telemetry-item">
+      <span class="status-beacon"></span>
+      <span>DSN ACTIVE: GOLDSTONE • MADRID • CANBERRA (24/7 QUANTUM LOCK)</span>
+    </div>
+    <div class="telemetry-item">
+      <span>NOAA SPACE WEATHER: <strong>Kp 2.1 (NOMINAL G0)</strong></span>
+    </div>
+    <div class="telemetry-item">
+      <span>CELESTIAL TIME: <strong id="telemetry-utc-clock">2026-10-19 06:55:00 UTC</strong></span>
+    </div>
+  </aside>
+
+  <!-- ==========================================
+       MAIN NAVIGATION BAR
+       ========================================== -->
+  <header class="main-navbar" id="site-header">
+    <a href="#hero" class="nav-brand" aria-label="ASTRONOVA Home">
+      <div class="brand-symbol">✦</div>
+      <div class="brand-text-col">
+        <span class="brand-name">ASTRONOVA</span>
+        <span class="brand-tagline">DEEP SPACE RESEARCH</span>
+      </div>
+    </a>
+
+    <nav aria-label="Primary Navigation">
+      <ul class="nav-links">
+        <li><a href="#hero" class="nav-link active">3D Orrery</a></li>
+        <li><a href="#distances" class="nav-link">Planet Distances (km)</a></li>
+        <li><a href="#nasa-news" class="nav-link">NASA Research</a></li>
+        <li><a href="#situations" class="nav-link">Space Situations</a></li>
+        <li><a href="#gallery" class="nav-link">Real-Time Images</a></li>
+        <li><a href="#catalog" class="nav-link">Planet Views</a></li>
+        <li><a href="#labs" class="nav-link">Astrophysics Labs</a></li>
+      </ul>
+    </nav>
+
+    <div class="nav-actions">
+      <!-- Fullscreen 3D Button -->
+      <button id="btn-fullscreen-3d" class="hud-btn hud-btn-spaceview" title="Toggle Fullscreen 3D Viewport" aria-label="Toggle Fullscreen">
+        <span>⛶ FULLSCREEN 3D</span>
+      </button>
+
+      <!-- Space View Panoramic Toggle -->
+      <button id="space-view-toggle-btn" class="hud-btn" title="Toggle Cockpit Space View Mode" aria-label="Space View">
+        <span>🌌 SPACE VIEW</span>
+      </button>
+
+      <!-- Theme Switcher (White Lab Default vs Deep Space) -->
+      <button id="theme-toggle-btn" class="hud-btn" title="Toggle Theme (White Lab / Deep Space)" aria-label="Toggle Theme">
+        <span class="icon">🌙</span>
+        <span class="btn-text">DEEP COSMOS</span>
+      </button>
+
+      <!-- Audio Toggle -->
+      <button id="audio-toggle-btn" class="hud-btn" title="Toggle Procedural Deep Space Synthesizer" aria-label="Toggle Audio">
+        <span class="icon">🔇</span>
+        <span class="btn-text">AUDIO OFF</span>
+      </button>
+
+      <!-- Warp Drive Button -->
+      <button id="warp-drive-btn" class="hud-btn hud-btn-primary" title="Engage Hyperspace Warp Speed" aria-label="Engage Warp Drive">
+        <span>⚡ WARP SPEED</span>
+      </button>
+    </div>
+  </header>
+
+  <!-- ==========================================
+       FULLSCREEN SPACE VIEW HUD (In Space View Mode)
+       ========================================== -->
+  <div id="space-view-fullscreen-hud" class="space-view-fullscreen-hud">
+    <div style="display:flex; align-items:center; gap:12px;">
+      <span class="status-beacon"></span>
+      <strong style="font-family: var(--font-display); letter-spacing:1px;">FULLSCREEN 3D SPACE OBSERVATORY</strong>
+    </div>
+    <div style="display:flex; gap:10px;">
+      <button class="hud-btn-mini space-view-preset-btn active" data-preset="default">DEFAULT OVERVIEW</button>
+      <button class="hud-btn-mini space-view-preset-btn" data-preset="polar">NORTH ECLIPTIC</button>
+      <button class="hud-btn-mini space-view-preset-btn" data-preset="edge">PLANETARY PLANE</button>
+      <button id="exit-space-view-btn" class="hud-btn-mini" style="background:var(--color-rose); color:#ffffff; border:none;">✕ EXIT SPACE VIEW</button>
+    </div>
+  </div>
+
+  <div class="space-view-controls-bar">
+    <button id="toggle-trails-btn" class="hud-btn-mini active">TRAILS: ON</button>
+    <button id="toggle-asteroids-btn" class="hud-btn-mini active">ASTEROIDS: ON</button>
+  </div>
+
+  <main>
+    <!-- ==========================================
+         HERO SECTION: 3D CELESTIAL ORRERY & HUD
+         ========================================== -->
+    <section class="hero-section" id="hero" aria-label="Interactive 3D Solar System Orrery">
+      <div id="hero-canvas-container"></div>
+
+      <!-- Hero Overlay Content -->
+      <div class="hero-overlay-content">
+        <div class="hero-badge-tag">
+          <span>● REAL-TIME OBSERVATION</span>
+          <span>SOLAR SYSTEM & INTERPLANETARY FLEET</span>
+        </div>
+        <h1 class="hero-title">
+          EXPLORE THE<br>
+          <span>INFINITE COSMOS</span>
+        </h1>
+        <p class="hero-subtitle">
+          Real-time planetary distances in kilometers from Earth, NASA research news, live space weather situations, and dedicated 3D view options for every planet.
+        </p>
+        <div class="hero-cta-group">
+          <a href="#distances" class="hud-btn hud-btn-primary" style="padding: 12px 24px; font-size: 0.95rem;">
+            <span>📏 PLANET DISTANCES (KM)</span>
+          </a>
+          <a href="#nasa-news" class="hud-btn" style="padding: 12px 24px; font-size: 0.95rem;">
+            <span>🔬 NASA RESEARCH FEED</span>
+          </a>
+        </div>
+      </div>
+
+      <!-- Hero 3D HUD Control Bar -->
+      <div class="hero-controls-hud" aria-label="3D Controls">
+        <div class="hud-group">
+          <span class="hud-label">SIMULATION MODE:</span>
+          <button class="hero-mode-btn active" data-mode="orrery" id="mode-orrery-btn">3D ORRERY</button>
+          <button class="hero-mode-btn" data-mode="blackhole" id="mode-blackhole-btn">KERR BLACK HOLE</button>
+        </div>
+
+        <div class="hud-group">
+          <span class="hud-label">SIMULATION SPEED:</span>
+          <input type="range" id="hero-speed-slider" min="0.1" max="5.0" step="0.1" value="1.0" style="accent-color: var(--color-primary); width: 90px;" aria-label="Orbital Speed Slider">
+        </div>
+      </div>
+    </section>
+
+    <!-- ==========================================
+         VIEW OPTION FOR EVERY PLANET: QUICK-SELECT RIBBON
+         ========================================== -->
+    <section class="planet-quick-ribbon-section" aria-label="Planet View Selector Ribbon">
+      <div class="ribbon-head">
+        <span class="ribbon-title">🪐 VIEW OPTION FOR EVERY PLANET & MAJOR MOON (CLICK TO FLY CAMERA)</span>
+        <span style="font-size:0.75rem; color:var(--text-dim); font-weight:600;">14 CELESTIAL WORLDS ACTIVE</span>
+      </div>
+      <div class="planets-scroll-strip">
+        <button class="planet-pill-btn active" data-planet="overview"><span class="pill-dot" style="background:#0284c7;"></span> 🌟 System Overview</button>
+        <button class="planet-pill-btn" data-planet="sun"><span class="pill-dot" style="background:#ffaa00;"></span> ☀️ The Sun</button>
+        <button class="planet-pill-btn" data-planet="mercury"><span class="pill-dot" style="background:#a8a29e;"></span> 🪨 Mercury</button>
+        <button class="planet-pill-btn" data-planet="venus"><span class="pill-dot" style="background:#f59e0b;"></span> 🌋 Venus</button>
+        <button class="planet-pill-btn" data-planet="earth"><span class="pill-dot" style="background:#0284c7;"></span> 🌍 Earth</button>
+        <button class="planet-pill-btn" data-planet="moon"><span class="pill-dot" style="background:#cbd5e1;"></span> 🌕 The Moon</button>
+        <button class="planet-pill-btn" data-planet="mars"><span class="pill-dot" style="background:#ef4444;"></span> 🔴 Mars</button>
+        <button class="planet-pill-btn" data-planet="jupiter"><span class="pill-dot" style="background:#d97706;"></span> 🌀 Jupiter</button>
+        <button class="planet-pill-btn" data-planet="europa"><span class="pill-dot" style="background:#93c5fd;"></span> 💧 Europa (Ocean)</button>
+        <button class="planet-pill-btn" data-planet="saturn"><span class="pill-dot" style="background:#fde047;"></span> 🪐 Saturn (Rings)</button>
+        <button class="planet-pill-btn" data-planet="titan"><span class="pill-dot" style="background:#d97706;"></span> 🌫️ Titan (Methane)</button>
+        <button class="planet-pill-btn" data-planet="enceladus"><span class="pill-dot" style="background:#f8fafc;"></span> ❄️ Enceladus (Geysers)</button>
+        <button class="planet-pill-btn" data-planet="uranus"><span class="pill-dot" style="background:#06b6d4;"></span> 💎 Uranus</button>
+        <button class="planet-pill-btn" data-planet="neptune"><span class="pill-dot" style="background:#2563eb;"></span> 🌊 Neptune</button>
+        <button class="planet-pill-btn" data-planet="pluto"><span class="pill-dot" style="background:#e2e8f0;"></span> 🧊 Pluto</button>
+      </div>
+    </section>
+
+    <!-- ==========================================
+         LIVE DISTANCE IN KILOMETERS TO ALL PLANETS
+         ========================================== -->
+    <section class="distances-section" id="distances" aria-label="Live Planetary Distances in Kilometers">
+      <div class="section-head">
+        <span class="section-tag">REAL-TIME ORBITAL EPHEMERIS</span>
+        <h2 class="section-title">DISTANCE IN KILOMETERS FROM EARTH TO ALL PLANETS</h2>
+        <p style="color:var(--text-muted); font-size:0.95rem; max-width:700px; margin:0.6rem auto 0 auto;">
+          Real-time live calculated distance in kilometers, Astronomical Units (AU), and light-travel time from Earth to each celestial body.
+        </p>
+      </div>
+
+      <div class="distances-grid" id="planet-distances-grid">
+        <!-- Rendered dynamically by main.js with live drift ticker -->
+      </div>
+    </section>
+
+    <!-- ==========================================
+         NASA RESEARCH REAL-TIME NEWS FEED
+         ========================================== -->
+    <section class="nasa-section" id="nasa-news" aria-label="NASA Research News Feed">
+      <div class="section-head">
+        <span class="section-tag">OFFICIAL NASA TELEMETRY</span>
+        <h2 class="section-title">NASA RESEARCH & DISCOVERIES (LIVE FEED)</h2>
+        <p style="color:var(--text-muted); font-size:0.95rem; max-width:700px; margin:0.6rem auto 0 auto;">
+          Direct research bulletins from NASA Jet Propulsion Laboratory (JPL), Goddard Space Flight Center, Kennedy Space Center, and the Artemis program.
+        </p>
+      </div>
+
+      <div class="nasa-grid" id="nasa-research-grid">
+        <!-- Rendered dynamically by main.js -->
+      </div>
+    </section>
+
+    <!-- ==========================================
+         REAL-TIME SPACE SITUATIONS
+         ========================================== -->
+    <section class="situations-section" id="situations" aria-label="Real-Time Situations & Telemetry">
+      <div class="section-head">
+        <span class="section-tag">LIVE SPACE SITUATIONAL AWARENESS</span>
+        <h2 class="section-title">REAL-TIME COSMIC SITUATIONS</h2>
+      </div>
+
+      <div class="situations-grid" id="situations-grid">
+        <!-- Rendered dynamically by main.js (Space Weather, ISS live tracking, Live Astronauts, NEO Asteroids) -->
+      </div>
+    </section>
+
+    <!-- ==========================================
+         REAL-TIME HIGH-RES SPACE IMAGERY GALLERY
+         ========================================== -->
+    <section class="images-gallery-section" id="gallery" aria-label="Real-time Space Images Gallery">
+      <div class="section-head">
+        <span class="section-tag">OBSERVATIONAL IMAGERY</span>
+        <h2 class="section-title">REAL-TIME SPACE IMAGES & PLANETARY PHOTOGRAPHS</h2>
+      </div>
+
+      <div class="gallery-grid" id="realtime-gallery-grid">
+        <!-- Rendered dynamically by main.js with real images for planets and missions -->
+      </div>
+    </section>
+
+    <!-- ==========================================
+         COSMIC CATALOG & VIEW OPTION FOR EVERY PLANET
+         ========================================== -->
+    <section class="catalog-section" id="catalog" aria-label="Cosmic Catalog & Planetary Encyclopedia">
+      <div class="catalog-header-wrap">
+        <div class="section-head" style="text-align: left; margin-bottom: 0;">
+          <span class="section-tag">CELESTIAL ENCYCLOPEDIA</span>
+          <h2 class="section-title">PLANETARY CATALOG & 3D VIEWPORT ARCHIVE</h2>
+        </div>
+
+        <div class="catalog-filter-bar">
+          <div class="catalog-tabs" role="tablist">
+            <button class="catalog-tab active" data-category="all" role="tab">All Disciplines</button>
+            <button class="catalog-tab" data-category="solar_system" role="tab">Solar System & Moons</button>
+            <button class="catalog-tab" data-category="black_holes" role="tab">Black Holes & Relativity</button>
+            <button class="catalog-tab" data-category="exoplanets" role="tab">Exoplanets</button>
+            <button class="catalog-tab" data-category="missions" role="tab">Space Missions Fleet</button>
+          </div>
+
+          <div class="catalog-search-wrap">
+            <span class="search-icon-pos">🔍</span>
+            <input type="text" id="catalog-search-input" class="search-input" placeholder="Search any planet, moon, black hole, rover..." aria-label="Search catalog">
+          </div>
+        </div>
+      </div>
+
+      <div class="catalog-grid" id="catalog-grid">
+        <!-- Rendered dynamically by main.js with 3D View option on every card -->
+      </div>
+    </section>
+
+    <!-- ==========================================
+         INTERACTIVE ASTROPHYSICS LABS
+         ========================================== -->
+    <section class="lab-section" id="labs" aria-label="Interactive Physics Simulations">
+      <div class="section-head">
+        <span class="section-tag">INTERACTIVE LABORATORY</span>
+        <h2 class="section-title">ASTROPHYSICS SIMULATION ENGINES</h2>
+      </div>
+
+      <div class="lab-grid">
+        <!-- LAB 1: Spacetime Gravity Well -->
+        <article class="lab-panel">
+          <div class="lab-panel-header">
+            <h3 class="situation-title">1. Einstein Spacetime Gravity Well</h3>
+            <p class="situation-desc">
+              General relativity spacetime metric curvature simulator. Click and drag in the grid below to launch test satellites or photons and witness orbital precession, slingshots, or event horizon capture.
+            </p>
+          </div>
+
+          <div class="lab-canvas-container">
+            <canvas id="gravity-canvas"></canvas>
+          </div>
+
+          <div style="display:flex; flex-wrap:wrap; gap:10px; align-items:center; justify-content:space-between;">
+            <div class="hud-group">
+              <span class="hud-label" style="color:var(--text-dim);">CENTRAL MASS:</span>
+              <button class="mass-selector-btn hud-btn-mini" data-mass="earth">Earth</button>
+              <button class="mass-selector-btn hud-btn-mini" data-mass="jupiter">Jupiter</button>
+              <button class="mass-selector-btn hud-btn-mini active" data-mass="sun">Sun</button>
+              <button class="mass-selector-btn hud-btn-mini" data-mass="neutron_star">Neutron Star</button>
+              <button class="mass-selector-btn hud-btn-mini" data-mass="black_hole">Black Hole</button>
+            </div>
+            <button id="btn-clear-particles" class="hud-btn-mini">CLEAR PARTICLES</button>
+          </div>
+        </article>
+
+        <!-- LAB 2: Exoplanet Transit & Habitability -->
+        <article class="lab-panel">
+          <div class="lab-panel-header">
+            <h3 class="situation-title">2. Exoplanet Transit & Habitability Lab</h3>
+            <p class="situation-desc">
+              Simulate Kepler/TESS transit photometry. Adjust stellar spectral class and semi-major axis to generate real-time photometric light curves and calculate liquid water equilibrium status.
+            </p>
+          </div>
+
+          <div class="lab-canvas-container transit-visual-box">
+            <canvas id="transit-visual-canvas" width="560" height="200"></canvas>
+          </div>
+
+          <div class="lab-canvas-container transit-graph-box">
+            <canvas id="transit-graph-canvas" width="560" height="140"></canvas>
+          </div>
+
+          <div class="transit-slider-group">
+            <div class="slider-row">
+              <label for="transit-star-select">Host Star Class:</label>
+              <select id="transit-star-select" class="compare-dropdown" style="padding: 4px 10px; font-size: 0.8rem;">
+                <option value="M">M-Dwarf (Red Cool Star)</option>
+                <option value="G" selected>G-Type (Sol Analog)</option>
+                <option value="F">F-Type (White Luminous Star)</option>
+              </select>
+            </div>
+
+            <div class="slider-row">
+              <label for="transit-radius-slider">Semi-Major Axis (AU):</label>
+              <input type="range" id="transit-radius-slider" min="0.1" max="3.0" step="0.05" value="1.0">
+              <span id="transit-radius-val" style="min-width: 60px; color: var(--color-primary); font-weight:700;">1.0 AU</span>
+            </div>
+
+            <div class="slider-row">
+              <label for="transit-planet-slider">Planet Radius (Earth Radii):</label>
+              <input type="range" id="transit-planet-slider" min="0.5" max="4.0" step="0.1" value="1.0">
+              <span id="transit-planet-val" style="min-width: 60px; color: var(--color-primary); font-weight:700;">1.0 R⊕</span>
+            </div>
+          </div>
+
+          <div class="transit-status-card">
+            <div>
+              <span class="lbl" style="font-size: 0.75rem; color: var(--text-dim); font-weight:600;">EQUILIBRIUM TEMP:</span>
+              <div id="transit-temp-readout" style="font-size: 1.1rem; font-weight: 700; color: var(--text-main);">15°C</div>
+            </div>
+            <div>
+              <span class="lbl" style="font-size: 0.75rem; color: var(--text-dim); font-weight:600;">TRANSIT DEPTH:</span>
+              <div id="transit-flux-drop" style="font-size: 1.1rem; font-weight: 700; color: var(--color-primary);">0.008%</div>
+            </div>
+            <div id="transit-hab-status">
+              <span class="badge" style="background: #dcfce7; color: var(--color-emerald); padding: 4px 10px; border-radius: 4px; font-weight:700;">💧 Goldilocks Zone</span>
+            </div>
+          </div>
+        </article>
+      </div>
+    </section>
+
+    <!-- ==========================================
+         COSMIC SCALE EXPLORER ("POWERS OF TEN")
+         ========================================== -->
+    <section class="scale-section" id="scale" aria-label="Cosmic Scale Explorer">
+      <div class="section-head">
+        <span class="section-tag">POWERS OF TEN</span>
+        <h2 class="section-title">THE ARCHITECTURE OF SCALE</h2>
+      </div>
+
+      <div class="scale-panel">
+        <div class="scale-slider-wrap">
+          <div class="scale-readout-bar">
+            <span>Subatomic Quarks</span>
+            <strong id="scale-value-readout" style="color: var(--color-primary); font-size: 1.1rem;">10⁰ m (1 m) : Human Astronaut</strong>
+            <span>Observable Universe</span>
+          </div>
+          <input type="range" id="scale-slider" class="scale-slider" min="0" max="12" step="1" value="3" aria-label="Cosmic scale order of magnitude slider">
+        </div>
+
+        <div id="scale-desc-card">
+          <div class="scale-info-card">
+            <h4 class="scale-title">Human Astronaut</h4>
+            <div class="scale-badge">10⁰ m (1 m)</div>
+            <p class="scale-desc">Biological explorers venturing into low Earth orbit and lunar regolith.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ==========================================
+         SIDE-BY-SIDE CELESTIAL COMPARISON
+         ========================================== -->
+    <section class="compare-section" id="compare" aria-label="Celestial Body Comparison">
+      <div class="section-head">
+        <span class="section-tag">COMPARATIVE PLANETOLOGY</span>
+        <h2 class="section-title">CELESTIAL BENCHMARK COMPARATOR</h2>
+      </div>
+
+      <div class="compare-selectors-bar">
+        <label for="compare-select-a" style="font-family: var(--font-tech); font-size: 0.9rem; color: var(--text-muted); font-weight:600;">Select Celestial Body A:</label>
+        <select id="compare-select-a" class="compare-dropdown" aria-label="Celestial Body A"></select>
+
+        <span style="font-family: var(--font-display); font-weight: 800; color: var(--color-primary);">⚔️</span>
+
+        <label for="compare-select-b" style="font-family: var(--font-tech); font-size: 0.9rem; color: var(--text-muted); font-weight:600;">Select Celestial Body B:</label>
+        <select id="compare-select-b" class="compare-dropdown" aria-label="Celestial Body B"></select>
+      </div>
+
+      <div id="comparison-output-container"></div>
+    </section>
+  </main>
+
+  <!-- ==========================================
+       MODAL DIALOG: 3D HOLOGRAM INSPECTOR
+       ========================================== -->
+  <div class="modal-overlay" id="modal-overlay" role="dialog" aria-modal="true" aria-label="Celestial Inspector">
+    <div class="modal-window">
+      <button class="modal-close-btn" id="modal-close-btn" aria-label="Close dialog">✕</button>
+      <div class="modal-body" id="modal-body-content"></div>
+    </div>
+  </div>
+
+  <!-- Warp Speed Overlay -->
+  <div class="warp-speed-overlay" id="warp-speed-overlay"></div>
+
+  <!-- ==========================================
+       FOOTER
+       ========================================== -->
+  <footer class="main-footer">
+    <div class="footer-inner">
+      <div class="footer-brand-col">
+        <div class="nav-brand">
+          <div class="brand-symbol">✦</div>
+          <div class="brand-text-col">
+            <span class="brand-name">ASTRONOVA</span>
+            <span class="brand-tagline">DEEP COSMOS RESEARCH</span>
+          </div>
+        </div>
+        <p class="footer-desc" style="color:var(--text-muted); font-size:0.88rem; max-width:380px;">
+          An open scientific intelligence platform aggregating observational telemetry from the James Webb Space Telescope, NASA Research Programs, NOAA Space Weather, and planetary exploration fleets.
+        </p>
+      </div>
+
+      <div>
+        <h4 class="footer-col-title">PLANET DISTANCES</h4>
+        <ul class="footer-links">
+          <li><a href="#distances">Distance to Mars (km)</a></li>
+          <li><a href="#distances">Distance to Jupiter (km)</a></li>
+          <li><a href="#distances">Distance to Venus (km)</a></li>
+          <li><a href="#distances">Distance to Saturn (km)</a></li>
+          <li><a href="#distances">Distance to The Moon (km)</a></li>
+        </ul>
+      </div>
+
+      <div>
+        <h4 class="footer-col-title">NASA RESEARCH</h4>
+        <ul class="footer-links">
+          <li><a href="#nasa-news">NASA Artemis Program</a></li>
+          <li><a href="#nasa-news">NASA Europa Clipper</a></li>
+          <li><a href="#nasa-news">NASA JWST Discoveries</a></li>
+          <li><a href="#nasa-news">NASA Mars Perseverance</a></li>
+          <li><a href="#nasa-news">NASA Parker Solar Probe</a></li>
+        </ul>
+      </div>
+
+      <div>
+        <h4 class="footer-col-title">SIMULATORS</h4>
+        <ul class="footer-links">
+          <li><a href="#hero">3D Fullscreen Orrery</a></li>
+          <li><a href="#hero">Kerr Black Hole Model</a></li>
+          <li><a href="#labs">Einstein Spacetime Well</a></li>
+          <li><a href="#labs">Exoplanet Transit Photometry</a></li>
+          <li><a href="#scale">Powers of Ten Scale</a></li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="footer-bottom">
+      <div>&copy; 2026 ASTRONOVA Deep Space Exploration Network. All observational telemetry verified.</div>
+      <div>COSMIC PROTOCOL: ISO-8601-UTC • THREE.JS WEBGL R128 • NASA EPHEMERIS DATABASE</div>
+    </div>
+  </footer>
+
+  <!-- Application Scripts -->
+  <script src="js/data.js"></script>
+  <script src="js/audio.js"></script>
+  <script src="js/space3d.js"></script>
+  <script src="js/interactives.js"></script>
+  <script src="js/main.js"></script>
+</body>
+</html>
